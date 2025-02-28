@@ -535,35 +535,62 @@
                 }
             }
             
-            async savePerfumeSelection(perfumes, gender) {
-                try {
-                    // In a real implementation, this would post to Google Sheets
-                    // For now, we'll simulate success with a delay
-                    
-                    // Validate inputs
-                    if (!gender) {
-                        throw new Error("Please select a gender");
-                    }
-                    
-                    if (perfumes.length === 0) {
-                        throw new Error("Please select at least one perfume");
-                    }
-                    
-                    // Simulate API delay
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    // Simulate successful save
-                    console.log("Saved selection:", {
-                        perfumes: perfumes.join(", "),
-                        gender: gender
-                    });
-                    
-                    return { success: true, message: "Your selections have been saved!" };
-                } catch (error) {
-                    console.error("Error saving selection:", error);
-                    throw error;
-                }
+          async savePerfumeSelection(perfumes, gender) {
+        try {
+            // Validate inputs
+            if (!gender) {
+                throw new Error("Please select a gender");
             }
+            
+            if (perfumes.length === 0) {
+                throw new Error("Please select at least one perfume");
+            }
+            
+            // Prepare data for submission
+            const data = {
+                perfumes: perfumes.join(", "),
+                gender: gender,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log("Saving perfume selection:", data);
+            
+            // Use URLSearchParams for more compatibility with Google Apps Script
+            const params = new URLSearchParams();
+            params.append('data', JSON.stringify(data));
+            
+            // Full URL with parameters
+            const saveUrlWithParams = `${this.saveUrl}&${params.toString()}`;
+            console.log("Full save URL:", saveUrlWithParams);
+            
+            // Make the actual POST request
+            const response = await fetch(saveUrlWithParams, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            });
+            
+            if (!response.ok) {
+                console.error("Save response not OK:", response.status, response.statusText);
+                const responseText = await response.text();
+                console.error("Response body:", responseText);
+                throw new Error(`Failed to save data: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            console.log("Save result:", result);
+            
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            
+            return { success: true, message: result.message || "Your selections have been saved!" };
+        } catch (error) {
+            console.error("Error saving selection:", error);
+            throw error;
+        }
+    }
         }
 
       
