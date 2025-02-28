@@ -379,6 +379,38 @@
     
     <script>
         // Dynamic background animation
+        function levenshtein(a, b) {
+          if (a.length === 0) return b.length;
+          if (b.length === 0) return a.length;
+          const matrix = [];
+          for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+          }
+          for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+          }
+          for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+              if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+              } else {
+                matrix[i][j] = Math.min(
+                  matrix[i - 1][j - 1] + 1,
+                  Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+                );
+              }
+            }
+          }
+          return matrix[b.length][a.length];
+        }
+        
+        function isSimilar(queryWord, itemWord) {
+          const distance = levenshtein(queryWord, itemWord);
+          // Allow differences up to 30% of the query word's length (minimum 1)
+          const threshold = Math.max(1, Math.floor(queryWord.length * 0.3));
+          return distance <= threshold;
+        }
+
         function createBackgroundAnimation() {
             const bgAnimationEl = document.getElementById('bgAnimation');
             const numberOfElements = 15;
@@ -434,9 +466,17 @@
             updateVisibleItems() {
                 // Filter based on search text and selected items
                const filteredItems = this.allItems.filter(item => {
-                  return !this.selectedItems.has(item) &&
-                     (this.filterText === '' || this.filterText.split(' ').some(word => item.toLowerCase().includes(word.toLowerCase())));
-                    });
+              if (this.selectedItems.has(item)) return false;
+              if (this.filterText === '') return true;
+              
+              const queryWords = this.filterText.toLowerCase().split(/\s+/).filter(Boolean);
+              const itemWords = item.toLowerCase().split(/\s+/).filter(Boolean);
+              
+              // Each query word must match at least one word in the item using fuzzy matching
+              return queryWords.every(queryWord => {
+                return itemWords.some(itemWord => isSimilar(queryWord, itemWord));
+              });
+            });
 
                 
                 // Update container height to match virtual height
