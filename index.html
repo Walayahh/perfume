@@ -500,10 +500,12 @@
             }
         }
         
-        // Google Sheets Integration
+      // Google Sheets Integration
         class GoogleSheetsManager {
             constructor() {
-                const deploymentId = "AKfycbwcWiSjotK9AjVej_zQ_EJ7XDaBM-8znZKOwXODFVbb9l1Efy68act_m5uKSMUmuN6e";
+                const deploymentId = "AKfycby2iDWaks53HaBZegZA3BhoVfWWoB-v6xs8InCcePhgOGnFh1PSh0GmG_214BdyWgNW";
+                this.sourceSheetId = "1mIHlu-wyuPq6js72jY90JHfT0YYCFN9AEraFH_ylDmE";
+                this.destinationSheetId = "1MYz2kIZB4qPVdT-7g1wbigpVPAcSn94nqCYcQekYW2E";
         
                 // Both fetchUrl and saveUrl use the same base URL but with different action parameters
                 this.fetchUrl = `https://script.google.com/macros/s/${deploymentId}/exec?action=fetch&sheetId=${this.sourceSheetId}`;
@@ -563,6 +565,9 @@
                 }
             }
         }
+
+      
+
         
         // App Controller
         class PerfumeSelectorApp {
@@ -578,6 +583,7 @@
                 
                 // State
                 this.selectedPerfumes = [];
+                this.isLoading = false;
                 
                 // Services
                 this.sheetsManager = new GoogleSheetsManager();
@@ -591,7 +597,11 @@
                 createBackgroundAnimation();
                 
                 // Set up event listeners
-                this.searchInput.addEventListener('focus', () => this.dropdownEl.style.display = 'block');
+                this.searchInput.addEventListener('focus', () => {
+                    if (!this.isLoading) {
+                        this.dropdownEl.style.display = 'block';
+                    }
+                });
                 this.searchInput.addEventListener('input', this.handleSearchInput.bind(this));
                 this.dropdownEl.addEventListener('click', this.handlePerfumeSelect.bind(this));
                 this.selectedPerfumesEl.addEventListener('click', this.handlePerfumeRemove.bind(this));
@@ -604,12 +614,69 @@
                     }
                 });
                 
+                // Set initial loading state
+                this.setLoadingState(true);
+                
                 // Load perfumes
                 try {
-                    const perfumes = await this.sheetsManager.fetchPerfumes();
+                    const perfumes = await this.loadPerfumes();
                     this.virtualList.setItems(perfumes);
                 } catch (error) {
                     this.showNotification(error.message, false);
+                } finally {
+                    this.setLoadingState(false);
+                }
+            }
+            
+            async loadPerfumes() {
+                try {
+                    // If we can't load from API, fall back to a demo data set
+                    const perfumes = await this.sheetsManager.fetchPerfumes();
+                    
+                    if (perfumes && perfumes.length > 0) {
+                        return perfumes;
+                    } else {
+                        console.warn("No perfumes returned from API, using fallback data");
+                        return this.getFallbackPerfumes();
+                    }
+                } catch (error) {
+                    console.error("Error in loadPerfumes:", error);
+                    console.warn("Using fallback perfume data due to API error");
+                    return this.getFallbackPerfumes();
+                }
+            }
+            
+            getFallbackPerfumes() {
+                // Fallback data in case the API fails
+                return [
+                    "Chanel No. 5", 
+                    "Dior Sauvage", 
+                    "Bleu de Chanel", 
+                    "Acqua di Gio", 
+                    "La Vie Est Belle",
+                    "Black Opium", 
+                    "Coco Mademoiselle", 
+                    "Flowerbomb", 
+                    "Light Blue", 
+                    "Miss Dior",
+                    "Eros", 
+                    "Le Male", 
+                    "1 Million", 
+                    "Aventus", 
+                    "Alien"
+                ];
+            }
+            
+            setLoadingState(isLoading) {
+                this.isLoading = isLoading;
+                
+                if (isLoading) {
+                    this.dropdownEl.innerHTML = `
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    `;
+                    this.dropdownEl.style.height = 'auto';
                 }
             }
             
@@ -691,6 +758,8 @@
                     return;
                 }
                 
+                const originalButtonText = this.saveButton.textContent;
+                
                 try {
                     this.saveButton.disabled = true;
                     this.saveButton.textContent = 'Saving...';
@@ -713,7 +782,7 @@
                     this.showNotification(error.message, false);
                 } finally {
                     this.saveButton.disabled = false;
-                    this.saveButton.textContent = 'Save Selection';
+                    this.saveButton.textContent = originalButtonText;
                 }
             }
             
