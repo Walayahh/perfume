@@ -466,17 +466,10 @@
             updateVisibleItems() {
                 // Filter based on search text and selected items
                const filteredItems = this.allItems.filter(item => {
-              if (this.selectedItems.has(item)) return false;
-              if (this.filterText === '') return true;
-              
-              const queryWords = this.filterText.toLowerCase().split(/\s+/).filter(Boolean);
-              const itemWords = item.toLowerCase().split(/\s+/).filter(Boolean);
-              
-              // Each query word must match at least one word in the item using fuzzy matching
-              return queryWords.every(queryWord => {
-                return itemWords.some(itemWord => isSimilar(queryWord, itemWord));
-              });
+              return !this.selectedItems.has(item) && 
+                     (this.filterText === '' || item.toLowerCase().includes(this.filterText));
             });
+
 
                 
                 // Update container height to match virtual height
