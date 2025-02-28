@@ -524,52 +524,38 @@ gsap.registerPlugin(ScrollTrigger);
                 return Array.from(this.selectedItems);
             }
    updateVisibleItems() {
-  const filteredItems = this.filteredItems || [];
-  const containerHeight = 200; // fixed height for smooth scrolling
-  this.container.style.height = containerHeight + 'px';
+  // Filter items based on search text and selected items
+  const filteredItems = this.allItems.filter(item => {
+    return !this.selectedItems.has(item) &&
+           (this.filterText === '' || item.toLowerCase().includes(this.filterText));
+  });
 
-  const totalHeight = filteredItems.length * this.itemHeight;
-  const scrollTop = this.container.scrollTop;
-  const startIndex = Math.floor(scrollTop / this.itemHeight);
-  const endIndex = Math.min(filteredItems.length - 1, Math.floor((scrollTop + containerHeight) / this.itemHeight));
-
-  const frag = document.createDocumentFragment();
-
-  // Spacer for items above the visible area
-  if (startIndex > 0) {
-    const topSpacer = document.createElement('div');
-    topSpacer.style.height = (startIndex * this.itemHeight) + 'px';
-    frag.appendChild(topSpacer);
-  }
-
-  // Render visible items
-  for (let i = startIndex; i <= endIndex; i++) {
-    if (i < filteredItems.length) {
-      const itemElement = document.createElement('div');
-      itemElement.className = 'dropdown-item';
-      itemElement.textContent = filteredItems[i];
-      itemElement.dataset.value = filteredItems[i];
-      frag.appendChild(itemElement);
-    }
-  }
-
-  // Spacer for items below the visible area
-  const itemsBelow = filteredItems.length - endIndex - 1;
-  if (itemsBelow > 0) {
-    const bottomSpacer = document.createElement('div');
-    bottomSpacer.style.height = (itemsBelow * this.itemHeight) + 'px';
-    frag.appendChild(bottomSpacer);
-  }
-
-  // Clear container and append updated fragment
+  // Clear the container
   this.container.innerHTML = '';
-  this.container.appendChild(frag);
 
-  // Optionally store the visible items for later use
-  this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
+  // If there are no items, show an empty state message
+  if (filteredItems.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'empty-state';
+    emptyMessage.textContent = this.filterText 
+      ? 'No matching perfumes found'
+      : 'No perfumes available';
+    this.container.appendChild(emptyMessage);
+    return;
+  }
+
+  // Render all filtered items
+  filteredItems.forEach(item => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'dropdown-item';
+    itemElement.textContent = item;
+    itemElement.dataset.value = item;
+    this.container.appendChild(itemElement);
+  });
+
+  // Optionally, store the visible items
+  this.visibleItems = filteredItems;
 }
-
-
 
             
             handleScroll() {
