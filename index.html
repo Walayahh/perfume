@@ -488,10 +488,29 @@ gsap.registerPlugin(ScrollTrigger);
                 this.updateVisibleItems();
             }
             
-            filterItems(text) {
-                this.filterText = text.toLowerCase();
-                this.updateVisibleItems();
-            }
+           filterItems(text) {
+          this.filterText = text.toLowerCase();
+          // Cache the filtered results
+          this.filteredItems = this.allItems.filter(item => {
+            return !this.selectedItems.has(item) &&
+                   (this.filterText === '' || this.filterMatches(item, this.filterText));
+          });
+          // Reset scroll to top
+          this.container.scrollTop = 0;
+          // Now update the visible items from the cached list
+          this.updateVisibleItems();
+        }
+        
+        // Example helper for matching (adjust as needed for your fuzzy logic)
+        filterMatches(item, queryText) {
+          const queryWords = queryText.split(/\s+/).filter(Boolean);
+          const itemWords = item.toLowerCase().split(/\s+/).filter(Boolean);
+          // Require that each query word is found (with simple inclusion or fuzzy matching)
+          return queryWords.every(queryWord => {
+            return itemWords.some(itemWord => itemWord.includes(queryWord));
+          });
+        }
+
             
             selectItem(item) {
                 this.selectedItems.add(item);
@@ -505,37 +524,31 @@ gsap.registerPlugin(ScrollTrigger);
                 return Array.from(this.selectedItems);
             }
             
-            updateVisibleItems() {
-  // Filter items based on search text and exclude selected items
-  const filteredItems = this.allItems.filter(item => {
-    return !this.selectedItems.has(item) &&
-           (this.filterText === '' || item.toLowerCase().includes(this.filterText));
-  });
-
-  // Compute the total virtual height of the list
-  const totalHeight = filteredItems.length * this.itemHeight;
-
-  // Use a fixed container height of 200px if there are many items; otherwise, use the actual height
-  const containerHeight = totalHeight > 200 ? 200 : totalHeight;
+    updateVisibleItems() {
+  const filteredItems = this.filteredItems || [];
+  // Set a fixed container height (e.g., 200px) for smooth scrolling
+  const containerHeight = 200;
   this.container.style.height = containerHeight + 'px';
 
-  // Get current scrollTop and calculate visible range
+  const totalHeight = filteredItems.length * this.itemHeight;
+  
+  // Use the container's current scrollTop to determine which items to show
   const scrollTop = this.container.scrollTop;
   const startIndex = Math.floor(scrollTop / this.itemHeight);
   const endIndex = Math.min(filteredItems.length - 1,
                             Math.floor((scrollTop + containerHeight) / this.itemHeight));
 
-  // Use a DocumentFragment for efficient DOM updates
+  // Build DOM nodes in a DocumentFragment
   const frag = document.createDocumentFragment();
-
-  // Spacer for items above the visible area
+  
+  // Spacer for items above the visible region
   if (startIndex > 0) {
     const topSpacer = document.createElement('div');
     topSpacer.style.height = (startIndex * this.itemHeight) + 'px';
     frag.appendChild(topSpacer);
   }
-
-  // Render visible items
+  
+  // Visible items
   for (let i = startIndex; i <= endIndex; i++) {
     if (i < filteredItems.length) {
       const itemElement = document.createElement('div');
@@ -545,22 +558,23 @@ gsap.registerPlugin(ScrollTrigger);
       frag.appendChild(itemElement);
     }
   }
-
-  // Spacer for items below the visible area
+  
+  // Spacer for items below
   const itemsBelow = filteredItems.length - endIndex - 1;
   if (itemsBelow > 0) {
     const bottomSpacer = document.createElement('div');
     bottomSpacer.style.height = (itemsBelow * this.itemHeight) + 'px';
     frag.appendChild(bottomSpacer);
   }
-
-  // Clear and update the container
+  
+  // Clear and update container in one go
   this.container.innerHTML = '';
   this.container.appendChild(frag);
-
-  // Optionally store the currently visible items
+  
+  // Optionally, update the visibleItems property
   this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
 }
+
 
           
           // Spacer for items below the visible range
