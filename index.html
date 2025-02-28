@@ -506,11 +506,60 @@ gsap.registerPlugin(ScrollTrigger);
             }
             
             updateVisibleItems() {
-                // Filter based on search text and selected items
-               const filteredItems = this.allItems.filter(item => {
-              return !this.selectedItems.has(item) && 
-                     (this.filterText === '' || item.toLowerCase().includes(this.filterText));
-            });
+          // Filter items based on search text and exclude selected items
+          const filteredItems = this.allItems.filter(item => {
+            return !this.selectedItems.has(item) && 
+                   (this.filterText === '' || item.toLowerCase().includes(this.filterText));
+          });
+          
+          // Calculate the virtual total height of the filtered list
+          const totalHeight = filteredItems.length * this.itemHeight;
+          // Set container height to a fixed max (e.g., 200px) if items exceed that, otherwise actual height
+          this.container.style.height = filteredItems.length > 0 ? `${Math.min(totalHeight, 200)}px` : 'auto';
+          
+          // Determine which items should be visible based on scroll position
+          const scrollTop = this.container.scrollTop;
+          const containerHeight = this.container.clientHeight;
+          const startIndex = Math.floor(scrollTop / this.itemHeight);
+          const endIndex = Math.min(filteredItems.length - 1, Math.floor((scrollTop + containerHeight) / this.itemHeight));
+          
+          // Use a DocumentFragment to minimize reflow/repaint overhead
+          const frag = document.createDocumentFragment();
+          
+          // Spacer for items above the visible range
+          if (startIndex > 0) {
+            const topSpacer = document.createElement('div');
+            topSpacer.style.height = `${startIndex * this.itemHeight}px`;
+            frag.appendChild(topSpacer);
+          }
+          
+          // Add visible items
+          for (let i = startIndex; i <= endIndex; i++) {
+            if (i < filteredItems.length) {
+              const itemElement = document.createElement('div');
+              itemElement.className = 'dropdown-item';
+              itemElement.textContent = filteredItems[i];
+              itemElement.dataset.value = filteredItems[i];
+              frag.appendChild(itemElement);
+            }
+          }
+          
+          // Spacer for items below the visible range
+          const itemsBelow = filteredItems.length - endIndex - 1;
+          if (itemsBelow > 0) {
+            const bottomSpacer = document.createElement('div');
+            bottomSpacer.style.height = `${itemsBelow * this.itemHeight}px`;
+            frag.appendChild(bottomSpacer);
+          }
+          
+          // Clear the container and append the new fragment in one go
+          this.container.innerHTML = '';
+          this.container.appendChild(frag);
+          
+          // Save the currently visible items (optional, if needed later)
+          this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
+        }
+
 
 
                 
