@@ -523,32 +523,26 @@ gsap.registerPlugin(ScrollTrigger);
                 this.updateVisibleItems();
                 return Array.from(this.selectedItems);
             }
-            
-    updateVisibleItems() {
+   updateVisibleItems() {
   const filteredItems = this.filteredItems || [];
-  // Set a fixed container height (e.g., 200px) for smooth scrolling
-  const containerHeight = 200;
+  const containerHeight = 200; // fixed height for smooth scrolling
   this.container.style.height = containerHeight + 'px';
 
   const totalHeight = filteredItems.length * this.itemHeight;
-  
-  // Use the container's current scrollTop to determine which items to show
   const scrollTop = this.container.scrollTop;
   const startIndex = Math.floor(scrollTop / this.itemHeight);
-  const endIndex = Math.min(filteredItems.length - 1,
-                            Math.floor((scrollTop + containerHeight) / this.itemHeight));
+  const endIndex = Math.min(filteredItems.length - 1, Math.floor((scrollTop + containerHeight) / this.itemHeight));
 
-  // Build DOM nodes in a DocumentFragment
   const frag = document.createDocumentFragment();
-  
-  // Spacer for items above the visible region
+
+  // Spacer for items above the visible area
   if (startIndex > 0) {
     const topSpacer = document.createElement('div');
     topSpacer.style.height = (startIndex * this.itemHeight) + 'px';
     frag.appendChild(topSpacer);
   }
-  
-  // Visible items
+
+  // Render visible items
   for (let i = startIndex; i <= endIndex; i++) {
     if (i < filteredItems.length) {
       const itemElement = document.createElement('div');
@@ -558,102 +552,25 @@ gsap.registerPlugin(ScrollTrigger);
       frag.appendChild(itemElement);
     }
   }
-  
-  // Spacer for items below
+
+  // Spacer for items below the visible area
   const itemsBelow = filteredItems.length - endIndex - 1;
   if (itemsBelow > 0) {
     const bottomSpacer = document.createElement('div');
     bottomSpacer.style.height = (itemsBelow * this.itemHeight) + 'px';
     frag.appendChild(bottomSpacer);
   }
-  
-  // Clear and update container in one go
+
+  // Clear container and append updated fragment
   this.container.innerHTML = '';
   this.container.appendChild(frag);
-  
-  // Optionally, update the visibleItems property
+
+  // Optionally store the visible items for later use
   this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
+}
 
 
 
-          
-          // Spacer for items below the visible range
-          const itemsBelow = filteredItems.length - endIndex - 1;
-          if (itemsBelow > 0) {
-            const bottomSpacer = document.createElement('div');
-            bottomSpacer.style.height = `${itemsBelow * this.itemHeight}px`;
-            frag.appendChild(bottomSpacer);
-          }
-          
-          // Clear the container and append the new fragment in one go
-          this.container.innerHTML = '';
-          this.container.appendChild(frag);
-          
-          // Save the currently visible items (optional, if needed later)
-          this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
-        }
-
-
-
-                
-                // Update container height to match virtual height
-                const totalHeight = filteredItems.length * this.itemHeight;
-                this.container.style.height = totalHeight < 400 ? `${totalHeight}px` : `400px`;
-
-                
-                // Calculate visible range
-                const scrollTop = this.container.scrollTop;
-                const containerHeight = this.container.clientHeight;
-                const startIndex = Math.floor(scrollTop / this.itemHeight);
-                const endIndex = Math.min(
-                    filteredItems.length - 1,
-                    Math.floor((scrollTop + containerHeight) / this.itemHeight)
-                );
-                
-                // Clear container
-                this.container.innerHTML = '';
-                
-                // Create spacer for items above visible range
-                const topSpacerHeight = startIndex * this.itemHeight;
-                if (topSpacerHeight > 0) {
-                    const topSpacer = document.createElement('div');
-                    topSpacer.style.height = `${topSpacerHeight}px`;
-                    this.container.appendChild(topSpacer);
-                }
-                
-                // Create visible items
-                for (let i = startIndex; i <= endIndex; i++) {
-                    if (i < filteredItems.length) {
-                        const itemElement = document.createElement('div');
-                        itemElement.className = 'dropdown-item';
-                        itemElement.textContent = filteredItems[i];
-                        itemElement.dataset.value = filteredItems[i];
-                        this.container.appendChild(itemElement);
-                    }
-                }
-                
-                // Create spacer for items below visible range
-                const itemsBelow = filteredItems.length - endIndex - 1;
-                if (itemsBelow > 0) {
-                    const bottomSpacerHeight = itemsBelow * this.itemHeight;
-                    const bottomSpacer = document.createElement('div');
-                    bottomSpacer.style.height = `${bottomSpacerHeight}px`;
-                    this.container.appendChild(bottomSpacer);
-                }
-                
-                // Show empty state if no items
-                if (filteredItems.length === 0) {
-                    const emptyMessage = document.createElement('div');
-                    emptyMessage.className = 'empty-state';
-                    emptyMessage.textContent = this.filterText 
-                        ? 'No matching perfumes found' 
-                        : 'No perfumes available';
-                    this.container.appendChild(emptyMessage);
-                    this.container.style.height = 'auto';
-                }
-                
-                this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
-            }
             
             handleScroll() {
                 window.requestAnimationFrame(() => this.updateVisibleItems());
