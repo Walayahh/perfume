@@ -709,6 +709,8 @@
             
             handleSearchInput(e) {
                 const searchText = e.target.value.trim();
+                this.dropdownEl.scrollTop = 0;
+                
                 this.virtualList.filterItems(searchText);
                 this.dropdownEl.style.display = 'block';
             }
