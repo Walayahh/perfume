@@ -158,7 +158,7 @@
        .dropdown-list {
         max-height: 200px;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        -webkit-overflow-scrolling: touch; /* Ensure smooth scrolling on iOS */
         background-color: var(--primary-bg);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -167,6 +167,10 @@
         scrollbar-width: thin;
         scrollbar-color: var(--accent) var(--primary-bg);
         scroll-behavior: smooth;
+        /* These properties help with touch scrolling */
+        position: relative;
+        z-index: 10;
+        touch-action: pan-y; /* Explicitly allow vertical touch scrolling */
     }
 
         
@@ -433,16 +437,28 @@
         // Virtual list for improved performance with large datasets
         class VirtualizedPerfumeList {
             constructor(containerElement, itemHeight = 40) {
-                this.container = containerElement;
-                this.itemHeight = itemHeight;
-                this.allItems = [];
-                this.visibleItems = [];
-                this.filterText = '';
-                this.selectedItems = new Set();
-                
-                this.container.style.position = 'relative';
-                this.container.addEventListener('scroll', this.handleScroll.bind(this));
-            }
+            this.container = containerElement;
+            this.itemHeight = itemHeight;
+            this.allItems = [];
+            this.visibleItems = [];
+            this.filterText = '';
+            this.selectedItems = new Set();
+            
+            this.container.style.position = 'relative';
+            this.container.addEventListener('scroll', this.handleScroll.bind(this));
+            
+            // Add these touch event listeners to improve mobile scrolling
+            this.container.addEventListener('touchstart', (e) => {
+                // Prevent default only if target is not an interactive element
+                if (!['INPUT', 'BUTTON', 'SELECT', 'A'].includes(e.target.tagName)) {
+                    e.stopPropagation();
+                }
+            }, { passive: true });
+            
+            this.container.addEventListener('touchmove', (e) => {
+                // Allow native scrolling behavior
+            }, { passive: true });
+        }
             
             setItems(items) {
                 this.allItems = items;
@@ -748,12 +764,20 @@
             }
             
             handleSearchInput(e) {
-                const searchText = e.target.value.trim();
-                this.dropdownEl.scrollTop = 0;
-                
-                this.virtualList.filterItems(searchText);
+            const searchText = e.target.value.trim();
+            this.dropdownEl.scrollTop = 0;
+            
+            this.virtualList.filterItems(searchText);
+            this.dropdownEl.style.display = 'block';
+            
+            // Add slight delay to ensure dropdown is visible before trying to scroll it
+            setTimeout(() => {
+                // Force a repaint to help with mobile rendering
+                this.dropdownEl.style.display = 'none';
+                this.dropdownEl.offsetHeight; // This forces a reflow
                 this.dropdownEl.style.display = 'block';
-            }
+            }, 10);
+        }
             
             handlePerfumeSelect(e) {
                 const item = e.target.closest('.dropdown-item');
