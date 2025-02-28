@@ -159,8 +159,6 @@
         max-height: 200px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        transform: translateZ(0);
-        will-change: transform;
         background-color: var(--primary-bg);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -168,6 +166,7 @@
         display: none;
         scrollbar-width: thin;
         scrollbar-color: var(--accent) var(--primary-bg);
+        scroll-behavior: smooth;
     }
 
         
@@ -430,20 +429,6 @@
                 bgAnimationEl.appendChild(span);
             }
         }
-
-        // Debounce function
-        function debounce(func, wait) {
-          let timeout;
-          return function(...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), wait);
-          };
-        }
-
-
-
-
         
         // Virtual list for improved performance with large datasets
         class VirtualizedPerfumeList {
@@ -456,7 +441,7 @@
                 this.selectedItems = new Set();
                 
                 this.container.style.position = 'relative';
-                this.container.addEventListener('scroll', debounce(this.handleScroll.bind(this), 50), { passive: true });
+                this.container.addEventListener('scroll', this.handleScroll.bind(this));
             }
             
             setItems(items) {
