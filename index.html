@@ -1,11 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Core GSAP library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
-    <!-- Optional: ScrollTrigger plugin for scroll-based animations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/ScrollTrigger.min.js"></script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfume Selector</title>
@@ -387,25 +382,6 @@
     </div>
     
     <script>
-        // Register ScrollTrigger
-gsap.registerPlugin(ScrollTrigger);
-
-    // Normalize scrolling (attempt to reduce jitter on mobile)
-    ScrollTrigger.normalizeScroll(true);
-    ScrollTrigger.config({ ignoreMobileResize: true });
-    
-    // Create a scroll-triggered animation
-    gsap.to("#myElement", {
-      scrollTrigger: {
-        trigger: "#myElement",
-        start: "top center",
-        end: "bottom center",
-        scrub: true,
-      },
-      x: 200, // animate x property
-      duration: 2
-    });
-
         // Dynamic background animation
         function levenshtein(a, b) {
           if (a.length === 0) return b.length;
@@ -488,29 +464,10 @@ gsap.registerPlugin(ScrollTrigger);
                 this.updateVisibleItems();
             }
             
-           filterItems(text) {
-          this.filterText = text.toLowerCase();
-          // Cache the filtered results
-          this.filteredItems = this.allItems.filter(item => {
-            return !this.selectedItems.has(item) &&
-                   (this.filterText === '' || this.filterMatches(item, this.filterText));
-          });
-          // Reset scroll to top
-          this.container.scrollTop = 0;
-          // Now update the visible items from the cached list
-          this.updateVisibleItems();
-        }
-        
-        // Example helper for matching (adjust as needed for your fuzzy logic)
-        filterMatches(item, queryText) {
-          const queryWords = queryText.split(/\s+/).filter(Boolean);
-          const itemWords = item.toLowerCase().split(/\s+/).filter(Boolean);
-          // Require that each query word is found (with simple inclusion or fuzzy matching)
-          return queryWords.every(queryWord => {
-            return itemWords.some(itemWord => itemWord.includes(queryWord));
-          });
-        }
-
+            filterItems(text) {
+                this.filterText = text.toLowerCase();
+                this.updateVisibleItems();
+            }
             
             selectItem(item) {
                 this.selectedItems.add(item);
@@ -523,40 +480,74 @@ gsap.registerPlugin(ScrollTrigger);
                 this.updateVisibleItems();
                 return Array.from(this.selectedItems);
             }
-   updateVisibleItems() {
-  // Filter items based on search text and selected items
-  const filteredItems = this.allItems.filter(item => {
-    return !this.selectedItems.has(item) &&
-           (this.filterText === '' || item.toLowerCase().includes(this.filterText));
-  });
+            
+            updateVisibleItems() {
+                // Filter based on search text and selected items
+               const filteredItems = this.allItems.filter(item => {
+              return !this.selectedItems.has(item) && 
+                     (this.filterText === '' || item.toLowerCase().includes(this.filterText));
+            });
 
-  // Clear the container
-  this.container.innerHTML = '';
 
-  // If there are no items, show an empty state message
-  if (filteredItems.length === 0) {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'empty-state';
-    emptyMessage.textContent = this.filterText 
-      ? 'No matching perfumes found'
-      : 'No perfumes available';
-    this.container.appendChild(emptyMessage);
-    return;
-  }
+                
+                // Update container height to match virtual height
+                const totalHeight = filteredItems.length * this.itemHeight;
+                this.container.style.height = totalHeight < 400 ? `${totalHeight}px` : `400px`;
 
-  // Render all filtered items
-  filteredItems.forEach(item => {
-    const itemElement = document.createElement('div');
-    itemElement.className = 'dropdown-item';
-    itemElement.textContent = item;
-    itemElement.dataset.value = item;
-    this.container.appendChild(itemElement);
-  });
-
-  // Optionally, store the visible items
-  this.visibleItems = filteredItems;
-}
-
+                
+                // Calculate visible range
+                const scrollTop = this.container.scrollTop;
+                const containerHeight = this.container.clientHeight;
+                const startIndex = Math.floor(scrollTop / this.itemHeight);
+                const endIndex = Math.min(
+                    filteredItems.length - 1,
+                    Math.floor((scrollTop + containerHeight) / this.itemHeight)
+                );
+                
+                // Clear container
+                this.container.innerHTML = '';
+                
+                // Create spacer for items above visible range
+                const topSpacerHeight = startIndex * this.itemHeight;
+                if (topSpacerHeight > 0) {
+                    const topSpacer = document.createElement('div');
+                    topSpacer.style.height = `${topSpacerHeight}px`;
+                    this.container.appendChild(topSpacer);
+                }
+                
+                // Create visible items
+                for (let i = startIndex; i <= endIndex; i++) {
+                    if (i < filteredItems.length) {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'dropdown-item';
+                        itemElement.textContent = filteredItems[i];
+                        itemElement.dataset.value = filteredItems[i];
+                        this.container.appendChild(itemElement);
+                    }
+                }
+                
+                // Create spacer for items below visible range
+                const itemsBelow = filteredItems.length - endIndex - 1;
+                if (itemsBelow > 0) {
+                    const bottomSpacerHeight = itemsBelow * this.itemHeight;
+                    const bottomSpacer = document.createElement('div');
+                    bottomSpacer.style.height = `${bottomSpacerHeight}px`;
+                    this.container.appendChild(bottomSpacer);
+                }
+                
+                // Show empty state if no items
+                if (filteredItems.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'empty-state';
+                    emptyMessage.textContent = this.filterText 
+                        ? 'No matching perfumes found' 
+                        : 'No perfumes available';
+                    this.container.appendChild(emptyMessage);
+                    this.container.style.height = 'auto';
+                }
+                
+                this.visibleItems = filteredItems.slice(startIndex, endIndex + 1);
+            }
             
             handleScroll() {
                 window.requestAnimationFrame(() => this.updateVisibleItems());
