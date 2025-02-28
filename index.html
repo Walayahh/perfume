@@ -329,6 +329,7 @@
         <header>
             <h1>Perfume Selection</h1>
             <p class="subtitle">Select your favorite perfumes and preferences</p>
+            <p class="subtitle" >This is for my AUS Recommendation Systems course :)</p>
         </header>
         
         <div class="form-group">
@@ -341,7 +342,7 @@
         </div>
         
         <div class="form-group">
-            <label for="perfume-search">Search Perfumes</label>
+            <label for="perfume-search">Search Perfumes(if searching brands, only search with full names)</label>
             <div class="search-container">
                 <span class="search-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -432,14 +433,16 @@
             
             updateVisibleItems() {
                 // Filter based on search text and selected items
-                const filteredItems = this.allItems.filter(item => {
-                    return !this.selectedItems.has(item) && 
-                           (this.filterText === '' || item.toLowerCase().includes(this.filterText));
-                });
+               const filteredItems = this.allItems.filter(item => {
+                  return !this.selectedItems.has(item) &&
+                     (this.filterText === '' || this.filterText.split(' ').some(word => item.toLowerCase().includes(word.toLowerCase())));
+                    });
+
                 
                 // Update container height to match virtual height
                 const totalHeight = filteredItems.length * this.itemHeight;
-                this.container.style.height = `${Math.min(totalHeight, 200)}px`;
+                this.container.style.height = totalHeight < 400 ? `${totalHeight}px` : `400px`;
+
                 
                 // Calculate visible range
                 const scrollTop = this.container.scrollTop;
