@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Core GSAP library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
+    <!-- Optional: ScrollTrigger plugin for scroll-based animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/ScrollTrigger.min.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfume Selector</title>
@@ -382,6 +387,25 @@
     </div>
     
     <script>
+        // Register ScrollTrigger
+gsap.registerPlugin(ScrollTrigger);
+
+    // Normalize scrolling (attempt to reduce jitter on mobile)
+    ScrollTrigger.normalizeScroll(true);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    
+    // Create a scroll-triggered animation
+    gsap.to("#myElement", {
+      scrollTrigger: {
+        trigger: "#myElement",
+        start: "top center",
+        end: "bottom center",
+        scrub: true,
+      },
+      x: 200, // animate x property
+      duration: 2
+    });
+
         // Dynamic background animation
         function levenshtein(a, b) {
           if (a.length === 0) return b.length;
